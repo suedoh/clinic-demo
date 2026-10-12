@@ -2,8 +2,9 @@ defmodule ClinicDemo.Scheduling do
   @moduledoc """
   Appointment scheduling for a small veterinary clinic.
 
-  Three resources — a patient (the animal), a clinician, and the appointment
-  that joins them — plus the code interface the rest of the application calls.
+  Three resources — a patient (the animal, with its weight history), a clinician,
+  and the appointment that joins them — plus the code interface the rest of the
+  application calls.
 
   Every function below is generated from an action on a resource. That is the
   point of the demo: the contract an agent needs to call this code is already
@@ -19,6 +20,8 @@ defmodule ClinicDemo.Scheduling do
       define :get_patient, action: :read, get_by: [:id]
       define :record_weight, action: :record_weight, args: [:weight_kg]
     end
+
+    resource ClinicDemo.Scheduling.WeightReading
 
     resource ClinicDemo.Scheduling.Clinician do
       define :hire_clinician, action: :create

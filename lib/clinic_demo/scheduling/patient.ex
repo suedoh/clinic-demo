@@ -88,6 +88,12 @@ defmodule ClinicDemo.Scheduling.Patient do
       sort scheduled_at: :desc
       temporal_keys {nil, :valid_at}
     end
+
+    has_many :weight_readings, ClinicDemo.Scheduling.WeightReading do
+      description "Every weigh-in on record, newest first."
+      public? true
+      sort recorded_at: :desc
+    end
   end
 
   aggregates do
