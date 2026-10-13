@@ -60,6 +60,51 @@ defmodule ClinicDemo.Scheduling.PatientTest do
              Scheduling.record_weight(patient, Decimal.new("0"), actor: @staff)
   end
 
+  test "every weigh-in is kept as a reading, newest first" do
+    {:ok, patient} =
+      Scheduling.register_patient(%{name: "Rex", species: :dog, owner_email: email()},
+        actor: @staff
+      )
+
+    {:ok, _} = Scheduling.record_weight(patient, Decimal.new("18.2"), actor: @staff)
+    {:ok, patient} = Scheduling.record_weight(patient, Decimal.new("18.9"), actor: @staff)
+
+    patient = Ash.load!(patient, :weight_readings)
+
+    assert Enum.map(patient.weight_readings, &Decimal.to_string(&1.weight_kg)) ==
+             ["18.9", "18.2"]
+  end
+
+  test "registering with a weight records the first reading; without one, none" do
+    {:ok, weighed} =
+      Scheduling.register_patient(
+        %{name: "Pip", species: :cat, owner_email: email(), weight_kg: Decimal.new("4.1")},
+        actor: @staff
+      )
+
+    {:ok, unweighed} =
+      Scheduling.register_patient(%{name: "Moss", species: :cat, owner_email: email()},
+        actor: @staff
+      )
+
+    assert [reading] = Ash.load!(weighed, :weight_readings).weight_readings
+    assert Decimal.equal?(reading.weight_kg, Decimal.new("4.1"))
+    assert [] = Ash.load!(unweighed, :weight_readings).weight_readings
+  end
+
+  test "a refused weigh-in leaves the history alone" do
+    {:ok, patient} =
+      Scheduling.register_patient(
+        %{name: "Rex", species: :dog, owner_email: email(), weight_kg: Decimal.new("18.2")},
+        actor: @staff
+      )
+
+    assert {:error, %Ash.Error.Invalid{}} =
+             Scheduling.record_weight(patient, Decimal.new("0"), actor: @staff)
+
+    assert [_only_one] = Ash.load!(patient, :weight_readings).weight_readings
+  end
+
   test "age_in_days is nil when the date of birth is unknown" do
     {:ok, known} =
       Scheduling.register_patient(

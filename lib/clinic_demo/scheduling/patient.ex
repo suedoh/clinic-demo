@@ -13,6 +13,8 @@ defmodule ClinicDemo.Scheduling.Patient do
     authorizers: [Ash.Policy.Authorizer],
     extensions: [AshEvents.Events]
 
+  alias ClinicDemo.Scheduling.Changes.RecordWeightReading
+
   postgres do
     table "patients"
     repo ClinicDemo.Repo
@@ -159,10 +161,16 @@ defmodule ClinicDemo.Scheduling.Patient do
         where present(:date_of_birth)
         message "cannot be in the future"
       end
+
+      change RecordWeightReading
     end
 
     update :record_weight do
       description "Log a weigh-in. The only sanctioned way to change :weight_kg."
+
+      # Appends a WeightReading after the update, so it cannot run as a single
+      # atomic statement.
+      require_atomic? false
 
       accept []
 
@@ -173,6 +181,7 @@ defmodule ClinicDemo.Scheduling.Patient do
       end
 
       change set_attribute(:weight_kg, arg(:weight_kg))
+      change RecordWeightReading
     end
   end
 
